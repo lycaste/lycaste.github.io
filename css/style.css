@@ -5,7 +5,7 @@ Primary style
 -------------------------------- */
 #elapseClock{margin:0 auto}
 #elapseClock .digit{font-family:"digit";font-size:36px}
-#elapseClock{font-family:"sans-serif";font-size:24px;color:#666}
+#elapseClock{font-family:"sans-serif";width:550px;font-size:24px;color:#666}
 html * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
