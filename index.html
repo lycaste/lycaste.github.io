@@ -1,78 +1,960 @@
-<!DOCTYPE HTML>
-<html>
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>time travel</title>
-<link rel="stylesheet" href="css/style.css" />
-<script type="text/javascript" src="js/jquery-1.11.0.min.js"></script>
-<style type="text/css">
-h2.top_title{border-bottom:none;background:none;text-align:center;line-height:32px; font-size:20px}
-h2.top_title span{font-size:12px; color:#666;font-weight:500}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>筛子加法 & 点炸弹游戏</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 15px;
+            padding: 24px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            border: 3px solid #4169E1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 游戏切换按钮 */
+        .game-switcher {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .switch-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5em;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .switch-btn.active {
+            transform: scale(1.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .switch-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .dice-switch {
+            background: #4169E1;
+            color: white;
+        }
+
+        .bomb-switch {
+            background: #FF4500;
+            color: white;
+        }
+
+        /* 游戏内容区域 */
+        .game-content {
+            transition: all 0.5s ease;
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .game-content.sliding-out {
+            opacity: 0;
+            transform: translateX(-100%);
+        }
+
+        .game-content.sliding-in {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        h1 {
+            color: #4169E1;
+            font-size: 1.8em;
+            margin-bottom: 16px;
+            margin-top: 24px;
+        }
+
+        .instruction {
+            background: #FFF8DC;
+            padding: 12px;
+            border-radius: 10px;
+            margin: 12px 0;
+            font-size: 0.9em;
+            color: #333;
+            border: 2px solid #FFD700;
+        }
+
+        /* 筛子游戏样式 */
+        .dice-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 24px 0;
+            gap: 16px;
+        }
+
+        .dice {
+            width: 80px;
+            height: 80px;
+            background: #FFFFFF;
+            border: 3px solid #4169E1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.4em;
+            font-weight: bold;
+            color: #4169E1;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .dice.rolling {
+            animation: roll 0.6s ease-in-out;
+        }
+
+        @keyframes roll {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .plus-sign {
+            font-size: 2em;
+            color: #32CD32;
+            font-weight: bold;
+        }
+
+        .equation {
+            font-size: 1.8em;
+            color: #4169E1;
+            margin: 20px 0;
+            font-weight: bold;
+            background: #F0F8FF;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #4169E1;
+        }
+
+        .answer-section {
+            margin: 16px 0;
+            padding: 12px;
+            background: #F5F5F5;
+            border-radius: 10px;
+            border: 2px solid #808080;
+        }
+
+        .answer-display {
+            font-size: 1.1em;
+            color: #FF1493;
+            font-weight: bold;
+            margin: 8px 0;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        /* 炸弹游戏样式 */
+        .bomb-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin: 20px 0;
+            padding: 20px;
+            background: #F0F8FF;
+            border-radius: 10px;
+            border: 2px solid #4169E1;
+        }
+
+        .bomb-cell {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+            border: 2px solid #4169E1;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4169E1;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bomb-cell:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .bomb-cell.clicked {
+            background: #98FB98;
+            border-color: #32CD32;
+            color: #32CD32;
+        }
+
+        .bomb-cell.bomb {
+            background: #FF4500;
+            border-color: #FF0000;
+            color: white;
+        }
+
+        .bomb-cell.exploding {
+            animation: explode 1s ease-out;
+        }
+
+        @keyframes explode {
+            0% { 
+                transform: scale(1);
+                background: #FF4500;
+            }
+            20% { 
+                transform: scale(1.5);
+                background: #FF6347;
+            }
+            40% { 
+                transform: scale(2);
+                background: #FF0000;
+            }
+            60% { 
+                transform: scale(1.8);
+                background: #FFD700;
+            }
+            80% { 
+                transform: scale(1.3);
+                background: #FF4500;
+            }
+            100% { 
+                transform: scale(1);
+                background: #FF4500;
+            }
+        }
+
+        .bomb-stats {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            padding: 10px;
+            background: #FFF8DC;
+            border-radius: 8px;
+            border: 2px solid #FFD700;
+        }
+
+        .stat-item {
+            color: #4169E1;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .roll-btn {
+            background: #4169E1;
+            color: white;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .roll-btn:hover {
+            background: #1E90FF;
+            transform: translateY(-2px);
+        }
+
+        .answer-btn {
+            background: #32CD32;
+            color: white;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .answer-btn:hover {
+            background: #228B22;
+            transform: translateY(-2px);
+        }
+
+        .answer-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .reset-btn {
+            background: #FF69B4;
+            color: white;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .reset-btn:hover {
+            background: #FF1493;
+            transform: translateY(-2px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* 焦点高亮样式 */
+        .focused {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8) !important;
+            transform: scale(1.05) !important;
+            transition: all 0.2s ease !important;
+        }
+
+        /* 取消默认焦点样式 */
+        *:focus {
+            outline: none;
+        }
+
+        /* 爆炸粒子效果 */
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #FFD700;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particle-explosion 1s ease-out forwards;
+        }
+
+        @keyframes particle-explosion {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
-
 <body>
+    <div class="game-container">
+        <!-- 游戏切换按钮 -->
+        <div class="game-switcher">
+            <button class="switch-btn dice-switch active" id="diceSwitch" onclick="switchToGame('dice')" title="筛子游戏">
+                🎲
+            </button>
+            <button class="switch-btn bomb-switch" id="bombSwitch" onclick="switchToGame('bomb')" title="点炸弹游戏">
+                💣
+            </button>
+        </div>
 
-<!--video用于显示媒体设备的视频流，自动播放-->
-<video id="video" autoplay style="width: 480px;height: 320px"></video>
-<!--拍照按钮-->
-<div>
-<button id="capture">拍照</button>
-</div>
-<!--描绘video截图-->
-<canvas id="canvas" width="480" height="320"></canvas>
+        <!-- 筛子游戏内容 -->
+        <div class="game-content" id="diceGame">
+            <h1>🎲 筛子加法游戏 🎲</h1>
+            
+            <div class="dice-container">
+                <div class="dice" id="dice1">?</div>
+                <div class="plus-sign">+</div>
+                <div class="dice" id="dice2">?</div>
+            </div>
+            
+            <div class="equation" id="equation">
+                点击"摇筛子"开始！
+            </div>
+            
+            <button class="btn roll-btn" id="rollBtn" onclick="rollDice()">
+                🎲 摇筛子
+            </button>
+            
+            <div class="answer-section" id="answerSection">
+                <div>你算出的答案是：</div>
+                <div class="answer-display" id="answerDisplay">?</div>
+                <button class="btn answer-btn" id="answerBtn" onclick="showAnswer()" disabled>
+                    📝 查看答案
+                </button>
+            </div>
+        </div>
 
-<script type="text/javascript">
-//访问用户媒体设备的兼容方法
-function getUserMedia(constrains,success,error){
-    if(navigator.mediaDevices.getUserMedia){
-        //最新标准API
-        navigator.mediaDevices.getUserMedia(constrains).then(success).catch(error);
-    } else if (navigator.webkitGetUserMedia){
-        //webkit内核浏览器
-        navigator.webkitGetUserMedia(constrains).then(success).catch(error);
-    } else if (navigator.mozGetUserMedia){
-        //Firefox浏览器
-        navagator.mozGetUserMedia(constrains).then(success).catch(error);
-    } else if (navigator.getUserMedia){
-        //旧版API
-        navigator.getUserMedia(constrains).then(success).catch(error);
-    }
-}
+        <!-- 炸弹游戏内容 -->
+        <div class="game-content hidden" id="bombGame">
+            <h1>💣 点炸弹游戏 💣</h1>
+            
+            <div class="instruction">
+                20个方块中隐藏着1个炸弹，小心点击！
+            </div>
 
-var video = document.getElementById("video");
-var canvas = document.getElementById("canvas");
-var context = canvas.getContext("2d");
+            <div class="bomb-stats">
+                <div class="stat-item">已点击: <span id="clickedCount">0</span>/20</div>
+                <div class="stat-item">剩余: <span id="remainingCount">20</span></div>
+            </div>
+            
+            <div class="bomb-grid" id="bombGrid">
+                <!-- 20个方块将由JavaScript生成 -->
+            </div>
+            
+            <button class="btn reset-btn" id="resetBtn" onclick="resetBombGame()">
+                🔄 重新开始
+            </button>
+        </div>
+    </div>
 
-//成功的回调函数
-function success(stream){
-    //兼容webkit内核浏览器
-    var CompatibleURL = window.URL || window.webkitURL;
-    //将视频流设置为video元素的源
-    video.src = CompatibleURL.createObjectURL(stream);
-    //播放视频
-    video.play();
-}
+    <script>
+        // 当前游戏状态
+        let currentGame = 'dice';
+        
+        // 筛子游戏变量
+        let dice1Value = 0;
+        let dice2Value = 0;
+        let isRolling = false;
+        let showingAnswer = false;
+        let rollInterval;
 
-//异常的回调函数
-function error(error){
-    alert("你的浏览器不支持访问用户媒体设备");
-}
-if (navigator.mediaDevices.getUserMedia || navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia){
-    //调用用户媒体设备，访问摄像头
-    getUserMedia({
-        video:{width:480,height:320}
-    },success,error);
-} else {
-    alert("你的浏览器不支持访问用户媒体设备");
-}
+        // 炸弹游戏变量
+        let bombGrid = [];
+        let bombPosition = 0;
+        let clickedCells = [];
+        let gameOver = false;
 
-//注册拍照按钮的单击事件
-document.getElementById("capture").addEventListener("click",function(){
-    //绘制画面
-    context.drawImage(video,0,0,480,320);
-});
-</script>
+        // 焦点管理系统
+        class FocusManager {
+            constructor() {
+                this.currentIndex = 0;
+                this.elements = [];
+                this.gridMode = false;
+                this.gridCols = 5;
+                this.gridRows = 4;
+                this.gridPosition = { x: 0, y: 0 };
+            }
+
+            // 更新可聚焦元素
+            updateElements() {
+                // 清除所有焦点
+                this.elements.forEach(el => el.classList.remove('focused'));
+                
+                if (currentGame === 'dice') {
+                    this.elements = [
+                        document.getElementById('diceSwitch'),
+                        document.getElementById('bombSwitch'),
+                        document.getElementById('rollBtn'),
+                        document.getElementById('answerBtn')
+                    ].filter(el => el && !el.disabled);
+                    this.gridMode = false;
+                } else if (currentGame === 'bomb') {
+                    this.elements = [
+                        document.getElementById('diceSwitch'),
+                        document.getElementById('bombSwitch'),
+                        document.getElementById('resetBtn'),
+                        ...document.querySelectorAll('.bomb-cell')
+                    ].filter(el => el);
+                    this.gridMode = true;
+                }
+
+                // 设置默认焦点
+                this.currentIndex = 0;
+                if (this.elements.length > 0) {
+                    this.setFocus(0);
+                }
+            }
+
+            // 设置焦点
+            setFocus(index) {
+                if (this.elements.length === 0) return;
+
+                // 移除所有焦点
+                this.elements.forEach(el => el.classList.remove('focused'));
+
+                // 设置新焦点
+                this.currentIndex = Math.max(0, Math.min(index, this.elements.length - 1));
+                this.elements[this.currentIndex].classList.add('focused');
+
+                // 更新网格位置
+                if (this.gridMode && this.currentIndex >= 3) {
+                    const gridIndex = this.currentIndex - 3;
+                    this.gridPosition.x = gridIndex % this.gridCols;
+                    this.gridPosition.y = Math.floor(gridIndex / this.gridCols);
+                }
+            }
+
+            // 线性导航
+            moveLinear(direction) {
+                if (this.elements.length === 0) return;
+
+                const newIndex = (this.currentIndex + direction + this.elements.length) % this.elements.length;
+                this.setFocus(newIndex);
+            }
+
+            // 网格导航
+            moveGrid(direction) {
+                if (this.elements.length === 0) return;
+
+                if (this.currentIndex < 3) {
+                    // 在顶部按钮区域
+                    if (direction === 'up' || direction === 'down') {
+                        if (direction === 'up') {
+                            this.currentIndex = (this.currentIndex - 1 + 3) % 3;
+                        } else {
+                            this.currentIndex = (this.currentIndex + 1) % 3;
+                        }
+                    } else if (direction === 'left') {
+                        this.currentIndex = (this.currentIndex - 1 + 3) % 3;
+                    } else if (direction === 'right') {
+                        this.currentIndex = (this.currentIndex + 1) % 3;
+                    }
+                    
+                    // 下移到网格
+                    if (direction === 'down' && this.currentIndex === 2) {
+                        this.currentIndex = 3;
+                        this.gridPosition.x = 0;
+                        this.gridPosition.y = 0;
+                    }
+                } else {
+                    // 在网格区域
+                    let newX = this.gridPosition.x;
+                    let newY = this.gridPosition.y;
+
+                    switch (direction) {
+                        case 'up':
+                            if (newY > 0) {
+                                newY--;
+                            } else {
+                                // 移动到顶部按钮
+                                this.currentIndex = 2;
+                                this.setFocus(this.currentIndex);
+                                return;
+                            }
+                            break;
+                        case 'down':
+                            if (newY < this.gridRows - 1) {
+                                newY++;
+                            } else {
+                                newY = 0; // 循环到第一行
+                            }
+                            break;
+                        case 'left':
+                            if (newX > 0) {
+                                newX--;
+                            } else {
+                                newX = this.gridCols - 1; // 循环到最后一列
+                            }
+                            break;
+                        case 'right':
+                            if (newX < this.gridCols - 1) {
+                                newX++;
+                            } else {
+                                newX = 0; // 循环到第一列
+                            }
+                            break;
+                    }
+
+                    this.gridPosition.x = newX;
+                    this.gridPosition.y = newY;
+                    const gridIndex = newY * this.gridCols + newX;
+                    this.currentIndex = 3 + gridIndex;
+                }
+
+                this.setFocus(this.currentIndex);
+            }
+
+            // 激活当前焦点元素
+            activate() {
+                if (this.elements.length === 0) return;
+                
+                const currentElement = this.elements[this.currentIndex];
+                if (currentElement) {
+                    currentElement.click();
+                }
+            }
+
+            // 处理方向键
+            handleDirection(direction) {
+                if (this.gridMode) {
+                    this.moveGrid(direction);
+                } else {
+                    if (direction === 'up') {
+                        this.moveLinear(-1);
+                    } else if (direction === 'down') {
+                        this.moveLinear(1);
+                    } else if (direction === 'left') {
+                        this.moveLinear(-1);
+                    } else if (direction === 'right') {
+                        this.moveLinear(1);
+                    }
+                }
+            }
+        }
+
+        // 创建焦点管理器实例
+        const focusManager = new FocusManager();
+
+        // 游戏切换功能
+        function switchToGame(gameType) {
+            if (currentGame === gameType) return;
+            
+            const diceGame = document.getElementById('diceGame');
+            const bombGame = document.getElementById('bombGame');
+            const diceSwitch = document.getElementById('diceSwitch');
+            const bombSwitch = document.getElementById('bombSwitch');
+            
+            // 添加滑出动画
+            const currentGameElement = currentGame === 'dice' ? diceGame : bombGame;
+            currentGameElement.classList.add('sliding-out');
+            
+            setTimeout(() => {
+                // 隐藏当前游戏
+                currentGameElement.classList.add('hidden');
+                currentGameElement.classList.remove('sliding-out');
+                
+                // 显示新游戏
+                const newGameElement = gameType === 'dice' ? diceGame : bombGame;
+                newGameElement.classList.remove('hidden');
+                newGameElement.classList.add('sliding-in');
+                
+                // 更新按钮状态
+                diceSwitch.classList.toggle('active', gameType === 'dice');
+                bombSwitch.classList.toggle('active', gameType === 'bomb');
+                
+                setTimeout(() => {
+                    newGameElement.classList.remove('sliding-in');
+                }, 50);
+                
+                currentGame = gameType;
+                
+                // 如果切换到炸弹游戏，初始化游戏
+                if (gameType === 'bomb') {
+                    initBombGame();
+                }
+                
+                // 更新焦点管理
+                setTimeout(() => {
+                    focusManager.updateElements();
+                }, 100);
+            }, 250);
+        }
+
+        // 筛子游戏功能
+        function rollDice() {
+            const rollBtn = document.getElementById('rollBtn');
+            const dice1 = document.getElementById('dice1');
+            const dice2 = document.getElementById('dice2');
+            const equation = document.getElementById('equation');
+            const answerBtn = document.getElementById('answerBtn');
+            const answerDisplay = document.getElementById('answerDisplay');
+            
+            if (isRolling) {
+                clearInterval(rollInterval);
+                
+                dice1Value = Math.floor(Math.random() * 9) + 1;
+                dice2Value = Math.floor(Math.random() * 9) + 1;
+                
+                dice1.textContent = dice1Value;
+                dice2.textContent = dice2Value;
+                
+                equation.innerHTML = `${dice1Value} + ${dice2Value} = ?`;
+                
+                dice1.classList.remove('rolling');
+                dice2.classList.remove('rolling');
+                
+                rollBtn.textContent = '🎲 摇筛子';
+                answerBtn.disabled = false;
+                answerBtn.textContent = '📝 查看答案';
+                isRolling = false;
+                showingAnswer = false;
+                
+                // 更新焦点管理
+                focusManager.updateElements();
+                
+                return;
+            }
+            
+            isRolling = true;
+            showingAnswer = false;
+            
+            rollBtn.textContent = '🛑 停止';
+            answerBtn.disabled = true;
+            answerDisplay.textContent = '?';
+            
+            dice1.classList.add('rolling');
+            dice2.classList.add('rolling');
+            
+            rollInterval = setInterval(() => {
+                dice1.textContent = Math.floor(Math.random() * 9) + 1;
+                dice2.textContent = Math.floor(Math.random() * 9) + 1;
+            }, 100);
+        }
+
+        function showAnswer() {
+            if (showingAnswer) return;
+            
+            showingAnswer = true;
+            const sum = dice1Value + dice2Value;
+            const answerDisplay = document.getElementById('answerDisplay');
+            const answerBtn = document.getElementById('answerBtn');
+            
+            const steps = generateSteps(dice1Value, dice2Value);
+            answerDisplay.innerHTML = steps;
+            
+            answerBtn.disabled = true;
+            answerBtn.textContent = '✅ 答案已显示';
+            
+            // 更新焦点管理
+            focusManager.updateElements();
+        }
+
+        function generateSteps(num1, num2) {
+            const sum = num1 + num2;
+            
+            if (sum <= 10) {
+                return `<div style="font-size: 2em; color: #32CD32;">${sum}</div>`;
+            }
+            
+            let bigNum = Math.max(num1, num2);
+            let smallNum = Math.min(num1, num2);
+            
+            let needToMake10 = 10 - bigNum;
+            let remaining = smallNum - needToMake10;
+            
+            if (remaining <= 0) {
+                return `<div style="font-size: 2.5em; color: #32CD32;">${sum}</div>`;
+            }
+            
+            function generateDots(count, color = "#4169E1") {
+                return "●".repeat(count);
+            }
+            
+            return `
+                <div style="color: #4169E1; font-size: 1.1em; margin-bottom: 10px;">凑10法计算：</div>
+                
+                <div style="background: #F0F8FF; padding: 8px; border-radius: 8px; margin: 5px 0; border: 2px solid #87CEEB;">
+                    <div style="color: #333; font-size: 1.1em;">
+                        ${num1} + ${num2} = ?
+                    </div>
+                </div>
+                
+                <div style="background: #FFF8DC; padding: 8px; border-radius: 8px; margin: 5px 0; border: 2px solid #FFD700;">
+                    <div style="color: #666; font-size: 0.95em;">把 ${smallNum} 拆分：</div>
+                    <div style="color: #FF1493; font-size: 1.1em; margin: 3px 0;">
+                        <span style="background: #FFE4E1; padding: 2px 6px; border-radius: 4px;">${smallNum}</span> = 
+                        <span style="background: #E6FFE6; padding: 2px 6px; border-radius: 4px;">${needToMake10}</span> + 
+                        <span style="background: #E6F3FF; padding: 2px 6px; border-radius: 4px;">${remaining}</span>
+                    </div>
+                    <div style="color: #888; font-size: 0.9em;">
+                        ${generateDots(smallNum, "#FF1493")} = ${generateDots(needToMake10, "#32CD32")} + ${generateDots(remaining, "#4169E1")}
+                    </div>
+                </div>
+                
+                <div style="background: #F0FFF0; padding: 8px; border-radius: 8px; margin: 5px 0; border: 2px solid #90EE90;">
+                    <div style="color: #333; font-size: 0.9em;">第一步：${bigNum} + ${needToMake10} = 10</div>
+                    <div style="color: #333; font-size: 0.9em; margin-top: 3px;">第二步：10 + ${remaining} = <span style="color: #32CD32; font-size: 1.2em; font-weight: bold;">${sum}</span></div>
+                </div>
+            `;
+        }
+
+        // 炸弹游戏功能
+        function initBombGame() {
+            const grid = document.getElementById('bombGrid');
+            grid.innerHTML = '';
+            
+            // 重置游戏状态
+            bombGrid = [];
+            clickedCells = [];
+            gameOver = false;
+            
+            // 随机选择炸弹位置
+            bombPosition = Math.floor(Math.random() * 20);
+            
+            // 创建20个方块
+            for (let i = 0; i < 20; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'bomb-cell';
+                cell.textContent = '?';
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => clickCell(i));
+                grid.appendChild(cell);
+                bombGrid.push(cell);
+            }
+            
+            updateStats();
+            
+            // 更新焦点管理
+            setTimeout(() => {
+                focusManager.updateElements();
+            }, 100);
+        }
+
+        function clickCell(index) {
+            if (gameOver || clickedCells.includes(index)) return;
+            
+            const cell = bombGrid[index];
+            clickedCells.push(index);
+            
+            if (index === bombPosition) {
+                // 点到炸弹
+                cell.classList.add('bomb', 'exploding');
+                cell.textContent = '💥';
+                gameOver = true;
+                
+                // 创建爆炸粒子效果
+                createExplosionParticles(cell);
+                
+                // 延迟显示所有安全区域
+                setTimeout(() => {
+                    bombGrid.forEach((c, i) => {
+                        if (i !== bombPosition && !clickedCells.includes(i)) {
+                            c.classList.add('clicked');
+                            c.textContent = '✅';
+                        }
+                    });
+                }, 500);
+                
+                // 震动效果（如果支持）
+                if (navigator.vibrate) {
+                    navigator.vibrate([100, 50, 100, 50, 100]);
+                }
+            } else {
+                // 安全区域
+                cell.classList.add('clicked');
+                cell.textContent = '✅';
+                
+                // 检查是否获胜
+                if (clickedCells.length === 19) {
+                    gameOver = true;
+                    setTimeout(() => {
+                        alert('🎉 恭喜！你成功避开了炸弹！');
+                    }, 100);
+                }
+            }
+            
+            updateStats();
+        }
+
+        function createExplosionParticles(cell) {
+            const rect = cell.getBoundingClientRect();
+            const containerRect = document.querySelector('.game-container').getBoundingClientRect();
+            
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = (rect.left - containerRect.left + rect.width / 2) + 'px';
+                particle.style.top = (rect.top - containerRect.top + rect.height / 2) + 'px';
+                
+                const angle = (Math.PI * 2 * i) / 20;
+                const distance = 50 + Math.random() * 50;
+                const endX = Math.cos(angle) * distance;
+                const endY = Math.sin(angle) * distance;
+                
+                particle.style.setProperty('--end-x', endX + 'px');
+                particle.style.setProperty('--end-y', endY + 'px');
+                
+                document.querySelector('.game-container').appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, 1000);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('clickedCount').textContent = clickedCells.length;
+            document.getElementById('remainingCount').textContent = 20 - clickedCells.length;
+        }
+
+        function resetBombGame() {
+            initBombGame();
+        }
+
+        // 键盘事件处理
+        document.addEventListener('keydown', function(event) {
+            // 阻止默认行为
+            event.preventDefault();
+            
+            // 方向键处理
+            switch(event.code) {
+                case 'ArrowUp':
+                    focusManager.handleDirection('up');
+                    break;
+                case 'ArrowDown':
+                    focusManager.handleDirection('down');
+                    break;
+                case 'ArrowLeft':
+                    focusManager.handleDirection('left');
+                    break;
+                case 'ArrowRight':
+                    focusManager.handleDirection('right');
+                    break;
+                    
+                // 确认键
+                case 'Enter':
+                case 'Space':
+                    focusManager.activate();
+                    break;
+                    
+                // 游戏切换快捷键
+                case 'Digit1':
+                    switchToGame('dice');
+                    break;
+                case 'Digit2':
+                    switchToGame('bomb');
+                    break;
+                    
+                // 返回键
+                case 'Escape':
+                case 'Backspace':
+                    // 可以添加返回主菜单等功能
+                    break;
+            }
+        });
+
+        // 更新粒子动画CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes particle-explosion {
+                0% {
+                    transform: scale(1) translate(0, 0);
+                    opacity: 1;
+                }
+                100% {
+                    transform: scale(0) translate(var(--end-x), var(--end-y));
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 页面加载时初始化
+        window.addEventListener('load', function() {
+            initBombGame();
+            // 初始化焦点管理
+            setTimeout(() => {
+                focusManager.updateElements();
+            }, 100);
+        });
+    </script>
 </body>
 </html>
